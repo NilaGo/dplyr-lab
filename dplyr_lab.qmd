@@ -1,0 +1,121 @@
+---
+title: "Dplyr lab"
+author: "Nila Gobiraj"
+format: html
+execute: 
+  keep-md: true
+message: FALSE
+echo : FALSE
+---
+# Exercise 1
+```{r initialisation , message=FALSE}
+#| message : false 
+#| echo: false
+library(dplyr)
+library(tidyr)
+library(here)
+library(ggplot2)
+theme_set(theme_bw())
+here::i_am("dplyr-lab.Rproj")
+spotify<-readRDS(here("top-spotify-songs-from-20102019-by-year.Rds"))
+
+```
+
+## Question 1
+
+```{r}
+artist<-spotify%>% distinct(artist)
+song<-spotify%>% distinct(title)
+genre<-spotify%>% distinct(`top genre`)
+```
+
+The dataset contains `r NROW(artist)` artists , `r NROW(song)` songs and `r NROW(genre)` genres
+
+## Question 2
+
+```{r number of songs per year}
+knitr::kable(spotify|>
+  group_by(year)|>
+  summarise(`number of songs` =n()))
+```
+
+## Question 3 
+
+```{r}
+df<-spotify%>% distinct( title , .keep_all = TRUE)
+artist <- df|>
+  group_by(artist)|>
+  summarise(`number of songs`= n())|>
+   arrange(desc(`number of songs`))
+top<-artist |>
+  slice_max(`number of songs`)
+
+
+```
+
+The most popular artist is `r top[,1]` with `r top[,2]` songs
+
+## Question 4
+
+```{r}
+genre<-spotify%>% distinct( title , .keep_all = TRUE)|>
+  group_by(`top genre`)|>
+  summarise(minimum=min(bpm),maximum=max(bpm),mean=mean(bpm),nb_songs=n())
+knitr::kable(genre)
+```
+
+## Question 5 
+
+
+```{r}
+year<-spotify|>
+  group_by(year)|>
+   summarise('median energy' =median(nrgy),'median danceability'=median(dnce))
+print(year)
+```
+
+## Question 6 
+```{r}
+
+ggplot(year,aes(year,`median energy`))+
+  geom_line()+
+  geom_line(mapping=aes(y=`median danceability`,color="red"))+
+  ylab("median energy and danceability")+
+  labs(title="median danceability and energy per year")
+```
+
+# Exercise 2
+## Question 1
+```{r}
+dropout<-readRDS(here("dropout.Rds"))
+
+```
+```{r}
+age<-dropout|>
+  group_by(Gender,`Marital status`)|>
+   summarise("median age at enrollment"= median(`Age at enrollment`),.groups="drop")
+print(age)
+```
+## Question 2
+```{r}
+age_<-age|>pivot_wider(names_from=c(Gender),values_from=`median age at enrollment`)
+knitr::kable(age_)
+
+```
+## Question 3
+```{r}
+curricular<-dropout|>
+  group_by(Target)|>
+   summarise(across(starts_with("Curricular units"), mean))
+print(curricular)
+```
+## Question 4
+```{r}
+curr_ <- curricular|>
+  pivot_longer(cols = starts_with("Curricular units"),names_to="Units")
+curr_ <- curr_|>
+  pivot_wider(names_from = Target, values_from = value)
+knitr::kable(curr_)
+```
+
+
